@@ -35,7 +35,7 @@ public class MassiveStats implements Listener {
 
     /* START: MASSIVESTATS SETTINGS */
     public static final int CLIENT_VERSION = 0; // v3.0
-    public static final String API_URL = "https://report.massivestats.com/";
+    public static final String API_URL = "https://report.massivestats.com/v2/";
 
     public static final String MASSIVE_UPDATE_PERMISSION = "massivestats.update";
     /* END: MASSIVESTATS SETTINGS */
