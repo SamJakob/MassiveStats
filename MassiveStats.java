@@ -258,6 +258,7 @@ class MassiveStatsUpdateTask extends BukkitRunnable {
         try {
             // Generate the request payload and serialize it as JSON.
             String payload = new MassiveStatsDataRequest(instance).serialize();
+
             // Then create a new HttpsUrlConnection to the API server and open it.
             HttpsURLConnection connection = (HttpsURLConnection) new URL(MassiveStats.API_URL).openConnection();
 
@@ -268,13 +269,13 @@ class MassiveStatsUpdateTask extends BukkitRunnable {
             // Set the all-important request headers before we begin POSTing...
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             connection.setRequestProperty("User-Agent", "Massive/" + MassiveStats.CLIENT_VERSION);
 
             // Open the output stream, write the payload, and then close the stream.
             connection.setDoOutput(true);
             DataOutputStream output = new DataOutputStream(connection.getOutputStream());
-            output.writeUTF(payload);
+            output.writeBytes(payload);
             output.flush();
             output.close();
 
@@ -328,6 +329,14 @@ class MassiveStatsUpdateTask extends BukkitRunnable {
                     return;
                 }
 
+                if(serverResponseGet.invoke(serverResponse, "notice") != null) {
+                    Bukkit.getLogger().severe(
+                            (String) getAsString.invoke(serverResponseGet.invoke(serverResponse, "notice"))
+                    );
+                    instance.stop();
+                    return;
+                }
+
                 boolean upToDate = (boolean) getAsBoolean.invoke(serverResponseGet.invoke(serverResponse, "upToDate"), null);
                 String latestVersion = (String) getAsString.invoke(serverResponseGet.invoke(serverResponse, "latestVersion"), null);
                 String updateMessage = ChatColor.translateAlternateColorCodes(
@@ -339,14 +348,15 @@ class MassiveStatsUpdateTask extends BukkitRunnable {
                 ));
 
             }catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
-                e.printStackTrace();
+                instance.getPlugin()
+                        .getLogger().warning("MassiveStats returned an invalid response for this plugin.");
             }
 
             // Finally, call an event to mark the update.
         } catch(MalformedURLException ex){
             instance.getPlugin()
                     .getLogger().warning("You have specified an invalid API endpoint for MassiveStats.");
-        } catch(IOException ex){
+        }catch(IOException ex){
             instance.getPlugin()
                     .getLogger().warning("MassiveStats was unable to communicate with its API endpoint.");
         }
